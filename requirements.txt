@@ -1,0 +1,7 @@
+pandas
+pytest
+pytest-html
+SQLAlchemy
+psycopg2-binary
+Faker
+python-dotenv
