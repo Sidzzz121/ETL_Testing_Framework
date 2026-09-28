@@ -1,11 +1,14 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
+from framework.logger import logger
+
 
 load_dotenv()
 
 
 def run_etl():
+    logger.info("ETL process started")
     conn = psycopg2.connect(
         host=os.getenv("ETL_DB_HOST"),
         port=os.getenv("ETL_DB_PORT"),
@@ -27,7 +30,7 @@ def run_etl():
                 """)
 
                 records = cur.fetchall()
-                print(f"Extracted {len(records)} records")
+                logger.info(f"Extracted {len(records)} records")
 
                 # Transform
                 transformed_records = []
@@ -53,7 +56,7 @@ def run_etl():
                         )
                     )
 
-                print(
+                logger.info(
                     f"Transformed {len(transformed_records)} records"
                 )
 
@@ -67,11 +70,11 @@ def run_etl():
                     VALUES (%s, %s, %s, %s, %s, %s)
                 """, transformed_records)
 
-                print(
+                logger.info(
                     f"Loaded {len(transformed_records)} records"
                 )
 
-        print("ETL PROCESS COMPLETED SUCCESSFULLY")
+        logger.info("ETL PROCESS COMPLETED SUCCESSFULLY")
 
     finally:
         conn.close()

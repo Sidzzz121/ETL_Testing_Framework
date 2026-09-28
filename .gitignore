@@ -17,6 +17,8 @@ reports/*.html
 # VS Code
 .vscode/
 
+logs/
+
 # Build / distribution
 build/
 dist/
