@@ -1,29 +1,18 @@
 import psycopg2
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from config.database import DB_CONFIG
 
 
 def connect_db(database=None):
-    """
-    Create and return a PostgreSQL database connection.
-    """
-
     return psycopg2.connect(
-        host=os.getenv("ETL_DB_HOST"),
-        port=os.getenv("ETL_DB_PORT"),
-        user=os.getenv("ETL_DB_USER"),
-        password=os.getenv("ETL_DB_PASSWORD"),
-        dbname=database or "etl_testing_db"
+        host=DB_CONFIG["host"],
+        port=DB_CONFIG["port"],
+        user=DB_CONFIG["user"],
+        password=DB_CONFIG["password"],
+        dbname=database or DB_CONFIG["database"]
     )
 
 
 def execute_query(query, database=None):
-    """
-    Execute a SQL query without returning data.
-    """
-
     conn = connect_db(database)
 
     try:
@@ -36,10 +25,6 @@ def execute_query(query, database=None):
 
 
 def fetch_all(query, database=None):
-    """
-    Execute a SELECT query and return all rows.
-    """
-
     conn = connect_db(database)
 
     try:
@@ -52,10 +37,6 @@ def fetch_all(query, database=None):
 
 
 def fetch_one(query, database=None):
-    """
-    Execute a SELECT query and return one row.
-    """
-
     conn = connect_db(database)
 
     try:
