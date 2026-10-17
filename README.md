@@ -126,3 +126,9 @@ The report contains the automated test results.
 ## Academic Project
 
 This project is being developed as an M.Tech project focused on automated ETL testing, data quality, and transformation validation.
+
+## System Architecture
+
+The following diagram illustrates the architecture of the Automated ETL Testing Framework.
+
+[View the ETL Testing Framework Architecture](https://github.com/Sidzzz121/ETL_Testing_Framework/blob/main/docs/architecture.md)
