@@ -9,15 +9,17 @@ load_dotenv()
 
 def run_etl():
     logger.info("ETL process started")
-    conn = psycopg2.connect(
-        host=os.getenv("ETL_DB_HOST"),
-        port=os.getenv("ETL_DB_PORT"),
-        user=os.getenv("ETL_DB_USER"),
-        password=os.getenv("ETL_DB_PASSWORD"),
-        dbname="etl_testing_db"
-    )
+    conn = None
 
     try:
+        conn = psycopg2.connect(
+            host=os.getenv("ETL_DB_HOST"),
+            port=os.getenv("ETL_DB_PORT"),
+            user=os.getenv("ETL_DB_USER"),
+            password=os.getenv("ETL_DB_PASSWORD"),
+            dbname="etl_testing_db"
+        )
+
         with conn:
             with conn.cursor() as cur:
 
@@ -30,7 +32,7 @@ def run_etl():
                 """)
 
                 records = cur.fetchall()
-                logger.info(f"Extracted {len(records)} records")
+                logger.info("Extracted %s records", len(records))
 
                 # Transform
                 transformed_records = []
@@ -57,7 +59,8 @@ def run_etl():
                     )
 
                 logger.info(
-                    f"Transformed {len(transformed_records)} records"
+                    "Transformed %s records",
+                    len(transformed_records)
                 )
 
                 # Load
@@ -65,19 +68,25 @@ def run_etl():
 
                 cur.executemany("""
                     INSERT INTO target_customers
-                    (customer_id, customer_name,
-                     email, city, amount, customer_segment)
+                    (customer_id, customer_name, email, city,
+                     amount, customer_segment)
                     VALUES (%s, %s, %s, %s, %s, %s)
                 """, transformed_records)
 
                 logger.info(
-                    f"Loaded {len(transformed_records)} records"
+                    "Loaded %s records",
+                    len(transformed_records)
                 )
 
-        logger.info("ETL PROCESS COMPLETED SUCCESSFULLY")
+        logger.info("ETL process completed successfully")
+
+    except Exception:
+        logger.exception("ETL process failed")
+        raise
 
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 if __name__ == "__main__":
