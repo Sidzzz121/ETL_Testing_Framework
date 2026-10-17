@@ -3,8 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from coverage import Coverage
-
+from framework.data_profiler import profile_source_data
 from framework.logger import logger
 from etl.load import run_etl
 
@@ -17,25 +16,19 @@ REPORT_DIR.mkdir(exist_ok=True)
 def main():
     logger.info("Starting ETL Testing Framework...")
 
-    # Start code coverage before executing the ETL pipeline.
-    coverage = Coverage(
-        source=["etl", "framework"],
-        omit=["*/__init__.py"],
-    )
-    coverage.start()
-
     try:
+        # Execute the ETL pipeline.
         run_etl()
+
+        # Profile source data.
+        profile = profile_source_data()
+        logger.info("Data profiling completed: %s", profile)
+
     except Exception:
-        logger.exception("ETL execution failed")
-        coverage.stop()
-        coverage.save()
+        logger.exception("ETL or data profiling failed")
         sys.exit(1)
 
-    coverage.stop()
-    coverage.save()
-
-    # Run the automated test suite and generate reports.
+    # Run automated tests and generate reports.
     result = subprocess.run(
         [
             sys.executable,
@@ -52,6 +45,50 @@ def main():
         ],
         cwd=PROJECT_ROOT,
     )
+
+    # Add profiling results to the HTML test report.
+    report_path = REPORT_DIR / "etl_report.html"
+
+    if report_path.exists():
+        try:
+            profiling_rows = "".join(
+                f"<tr><td>{key.replace('_', ' ').title()}</td>"
+                f"<td>{value}</td></tr>"
+                for key, value in profile.items()
+            )
+
+            profiling_section = f"""
+            <section style="margin: 25px 8px; font-family: Arial, sans-serif;">
+                <h2>Source Data Quality Profile</h2>
+                <table style="border-collapse: collapse; min-width: 400px;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #ccc; padding: 8px;">
+                                Metric
+                            </th>
+                            <th style="border: 1px solid #ccc; padding: 8px;">
+                                Value
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {profiling_rows}
+                    </tbody>
+                </table>
+            </section>
+            """
+
+            html = report_path.read_text(encoding="utf-8")
+            html = html.replace(
+                "</body>",
+                profiling_section + "\n</body>",
+            )
+            report_path.write_text(html, encoding="utf-8")
+
+            logger.info("Data profiling added to HTML test report")
+
+        except Exception:
+            logger.exception("Could not add profiling results to HTML report")
 
     if result.returncode == 0:
         logger.info(
