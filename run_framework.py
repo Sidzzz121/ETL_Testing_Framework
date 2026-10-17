@@ -47,12 +47,11 @@ def main():
         cwd=PROJECT_ROOT,
     )
 
-    # Add data profiling and anomaly results to the HTML report.
     report_path = REPORT_DIR / "etl_report.html"
 
     if report_path.exists():
         try:
-            # Build the source data quality table.
+            # Prepare profiling metrics.
             excluded_keys = {"amount_anomalies", "anomaly_count"}
 
             profiling_rows = "".join(
@@ -64,7 +63,7 @@ def main():
                 if key not in excluded_keys
             )
 
-            # Prepare anomaly detection results.
+            # Prepare anomaly details.
             anomaly_values = profile.get("amount_anomalies", [])
             anomaly_count = profile.get(
                 "anomaly_count", len(anomaly_values)
@@ -76,22 +75,96 @@ def main():
                     for value in anomaly_values
                 )
                 anomaly_status = "Anomalies detected"
+                status_color = "#b45309"
             else:
                 anomaly_details = (
                     "<li>No amount anomalies detected.</li>"
                 )
                 anomaly_status = "No anomalies detected"
+                status_color = "#15803d"
 
-            profiling_section = f"""
-            <section style="margin: 25px 8px; font-family: Arial, sans-serif;">
-                <h2>Source Data Quality Profile</h2>
-                <table style="border-collapse: collapse; min-width: 400px;">
+            # Build the dashboard.
+            dashboard = f"""
+            <section style="
+                margin: 30px 8px;
+                padding: 24px;
+                font-family: Arial, sans-serif;
+                color: #1f2937;
+                background: #f8fafc;
+                border: 1px solid #dbe3ec;
+                border-radius: 12px;
+            ">
+                <h1 style="margin-top: 0;">
+                    ETL Data Quality Dashboard
+                </h1>
+
+                <p>
+                    Source data profiling and statistical anomaly
+                    detection results.
+                </p>
+
+                <div style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 16px;
+                    margin: 20px 0;
+                ">
+                    <div style="
+                        background: white;
+                        border: 1px solid #dbe3ec;
+                        border-radius: 8px;
+                        padding: 16px;
+                        min-width: 150px;
+                    ">
+                        <div>Total Records</div>
+                        <strong style="font-size: 26px;">
+                            {html.escape(str(profile.get('total_records', 0)))}
+                        </strong>
+                    </div>
+
+                    <div style="
+                        background: white;
+                        border: 1px solid #dbe3ec;
+                        border-radius: 8px;
+                        padding: 16px;
+                        min-width: 150px;
+                    ">
+                        <div>Overall Data Quality</div>
+                        <strong style="font-size: 26px;">
+                            {html.escape(str(profile.get('overall_data_quality_score', 0)))}%
+                        </strong>
+                    </div>
+
+                    <div style="
+                        background: white;
+                        border: 1px solid #dbe3ec;
+                        border-radius: 8px;
+                        padding: 16px;
+                        min-width: 150px;
+                    ">
+                        <div>Amount Anomalies</div>
+                        <strong style="
+                            font-size: 26px;
+                            color: {status_color};
+                        ">
+                            {html.escape(str(anomaly_count))}
+                        </strong>
+                    </div>
+                </div>
+
+                <h2>Data Quality Metrics</h2>
+
+                <table style="
+                    width: 100%;
+                    border-collapse: collapse;
+                    background: white;
+                ">
                     <thead>
-                        <tr>
-                            <th style="border: 1px solid #ccc; padding: 8px;">
+                        <tr style="background: #e2e8f0;">
+                            <th style="border: 1px solid #cbd5e1; padding: 10px; text-align: left;">
                                 Metric
                             </th>
-                            <th style="border: 1px solid #ccc; padding: 8px;">
+                            <th style="border: 1px solid #cbd5e1; padding: 10px; text-align: left;">
                                 Value
                             </th>
                         </tr>
@@ -100,47 +173,44 @@ def main():
                         {profiling_rows}
                     </tbody>
                 </table>
-            </section>
-            """
 
-            anomaly_section = f"""
-            <section style="margin: 25px 8px; font-family: Arial, sans-serif;">
                 <h2>Amount Anomaly Detection</h2>
+
                 <p>
-                    <strong>Detection method:</strong>
+                    <strong>Method:</strong>
                     Interquartile Range (IQR)
                 </p>
-                <p>
+
+                <p style="color: {status_color};">
                     <strong>Status:</strong>
                     {html.escape(anomaly_status)}
                 </p>
-                <p>
-                    <strong>Anomaly count:</strong>
-                    {anomaly_count}
-                </p>
+
                 <h3>Detected Amounts</h3>
-                <ul>
-                    {anomaly_details}
-                </ul>
+                <ul>{anomaly_details}</ul>
             </section>
             """
 
+            # Insert the dashboard before the closing body tag.
             html_content = report_path.read_text(encoding="utf-8")
 
-            # Insert both sections before the closing body tag.
-            html_content = html_content.replace(
-                "</body>",
-                profiling_section + anomaly_section + "\n</body>",
-            )
-
-            report_path.write_text(
-                html_content,
-                encoding="utf-8",
-            )
-
-            logger.info(
-                "Data profiling and anomaly results added to HTML report"
-            )
+            if "</body>" in html_content:
+                html_content = html_content.replace(
+                    "</body>",
+                    dashboard + "\n</body>",
+                    1,
+                )
+                report_path.write_text(
+                    html_content,
+                    encoding="utf-8",
+                )
+                logger.info(
+                    "Data quality dashboard added to HTML report"
+                )
+            else:
+                logger.warning(
+                    "Could not find closing body tag in HTML report"
+                )
 
         except Exception:
             logger.exception(
@@ -164,3 +234,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
