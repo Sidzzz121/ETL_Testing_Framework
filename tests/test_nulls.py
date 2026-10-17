@@ -1,3 +1,4 @@
+
 from framework.db_utils import fetch_all
 from framework.validators import validate_no_nulls
 
@@ -10,4 +11,4 @@ def test_source_null_values():
 
     records = fetch_all(query)
 
-    validate_no_nulls(records)
+    assert validate_no_nulls(records)

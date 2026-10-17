@@ -1,3 +1,4 @@
+
 from framework.db_utils import fetch_all
 from framework.validators import validate_data
 
@@ -19,4 +20,4 @@ def test_source_target_data():
         """
     )
 
-    validate_data(source_data, target_data)
+    assert validate_data(source_data, target_data)

@@ -1,3 +1,4 @@
+
 from framework.db_utils import fetch_all
 from framework.validators import validate_schema
 
@@ -11,7 +12,6 @@ def test_target_table_schema():
     """
 
     columns = fetch_all(query)
-
     actual_columns = [row[0] for row in columns]
 
     expected_columns = [
@@ -23,4 +23,4 @@ def test_target_table_schema():
     "customer_segment"
 ]
 
-    validate_schema(actual_columns, expected_columns)
+    assert validate_schema(actual_columns, expected_columns)

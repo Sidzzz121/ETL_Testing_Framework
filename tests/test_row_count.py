@@ -1,3 +1,4 @@
+
 from framework.db_utils import fetch_one
 from framework.validators import validate_row_count
 
@@ -11,4 +12,4 @@ def test_source_target_row_count():
         "SELECT COUNT(*) FROM target_customers"
     )[0]
 
-    validate_row_count(source_count, target_count)
+    assert validate_row_count(source_count, target_count)
