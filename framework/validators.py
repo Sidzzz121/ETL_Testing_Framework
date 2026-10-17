@@ -110,3 +110,24 @@ def validate_reconciliation(source_total, target_total):
     )
 
     return True
+
+import re
+
+
+def validate_email_format(emails):
+    """
+    Validate that every email address has a basic valid format.
+    """
+    email_pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+
+    invalid_emails = [
+        email for email in emails
+        if not isinstance(email, str)
+        or not re.fullmatch(email_pattern, email)
+    ]
+
+    assert not invalid_emails, (
+        f"Invalid email format found: {invalid_emails}"
+    )
+
+    return True
