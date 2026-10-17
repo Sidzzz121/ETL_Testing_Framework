@@ -77,3 +77,15 @@ jobs:
 
       - name: Run ETL and automated tests
         run: python run_framework.py
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: etl-test-and-coverage-reports
+          path: |
+            reports/etl_report.html
+            reports/coverage/
+          if-no-files-found: warn
+
+        
+        
