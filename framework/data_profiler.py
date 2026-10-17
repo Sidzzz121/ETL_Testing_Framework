@@ -1,9 +1,11 @@
+
 from framework.db_utils import fetch_all
 from framework.logger import logger
+from framework.anomaly_detector import detect_iqr_anomalies
 
 
 def profile_source_data():
-    """Generate a data quality profile for source customer data."""
+    """Generate a data quality profile and detect amount anomalies."""
 
     query = """
         SELECT
@@ -34,6 +36,19 @@ def profile_source_data():
         raise ValueError("Data profiling query returned no results.")
 
     profile = result[0]
+
+    # Detect anomalies in non-null customer amounts.
+    amount_rows = fetch_all(
+        """
+        SELECT amount
+        FROM source_customers
+        WHERE amount IS NOT NULL
+        ORDER BY customer_id;
+        """
+    )
+
+    amounts = [row[0] for row in amount_rows]
+    amount_anomalies = detect_iqr_anomalies(amounts)
 
     total_records = profile[0]
     null_names = profile[1]
@@ -90,8 +105,14 @@ def profile_source_data():
         "uniqueness_score": round(uniqueness_score, 2),
         "validity_score": round(validity_score, 2),
         "overall_data_quality_score": round(overall_score, 2),
+        "amount_anomalies": amount_anomalies,
+        "anomaly_count": len(amount_anomalies),
     }
 
     logger.info("Source data profile: %s", report)
+    logger.info(
+        "Amount anomalies detected: %s",
+        amount_anomalies,
+    )
 
     return report
