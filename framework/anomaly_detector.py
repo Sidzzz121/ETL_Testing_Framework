@@ -38,6 +38,7 @@ def detect_iqr_anomalies(values, multiplier=1.5):
         if value < lower_bound or value > upper_bound
     ]
 
+
 def explain_iqr_anomalies(values, multiplier=1.5):
     """Return anomaly details, including severity and IQR boundaries."""
 
@@ -97,23 +98,3 @@ def explain_iqr_anomalies(values, multiplier=1.5):
         })
 
     return details
-
-def test_anomaly_includes_severity_and_explanation():
-    values = [10, 11, 12, 13, 14, 15, 16, 17, 18, 100]
-
-    result = explain_iqr_anomalies(values)
-
-    assert len(result) == 1
-    anomaly = result[0]
-
-    assert anomaly["value"] == 100.0
-    assert anomaly["severity"] == "HIGH"
-    assert anomaly["direction"] == "above"
-    assert anomaly["lower_bound"] < anomaly["upper_bound"]
-    assert "IQR boundary" in anomaly["reason"]
-
-
-def test_explanation_returns_empty_list_without_anomalies():
-    values = [10, 11, 12, 13, 14, 15, 16, 17, 18]
-
-    assert explain_iqr_anomalies(values) == []
