@@ -52,7 +52,10 @@ def main():
     if report_path.exists():
         try:
             # Prepare profiling metrics.
-            excluded_keys = {"amount_anomalies", "anomaly_count"}
+            excluded_keys = {
+                "amount_anomalies",
+                "anomaly_count",
+            }
 
             profiling_rows = "".join(
                 "<tr>"
@@ -66,7 +69,8 @@ def main():
             # Prepare anomaly details.
             anomaly_values = profile.get("amount_anomalies", [])
             anomaly_count = profile.get(
-                "anomaly_count", len(anomaly_values)
+                "anomaly_count",
+                len(anomaly_values),
             )
 
             if anomaly_values:
@@ -82,6 +86,103 @@ def main():
                 )
                 anomaly_status = "No anomalies detected"
                 status_color = "#15803d"
+
+            # Prepare data for the data-quality bar chart.
+            chart_metrics = [
+                (
+                    "Total Records",
+                    profile.get("total_records", 0),
+                ),
+                (
+                    "Valid Emails",
+                    profile.get("valid_emails", 0),
+                ),
+                (
+                    "Null Names",
+                    profile.get("null_names", 0),
+                ),
+                (
+                    "Null Emails",
+                    profile.get("null_emails", 0),
+                ),
+                (
+                    "Null Amounts",
+                    profile.get("null_amounts", 0),
+                ),
+                (
+                    "Amount Anomalies",
+                    anomaly_count,
+                ),
+            ]
+
+            # Safely convert metrics into numeric values.
+            normalized_metrics = []
+
+            for label, value in chart_metrics:
+                try:
+                    numeric_value = max(0, float(value))
+                except (TypeError, ValueError):
+                    numeric_value = 0
+
+                normalized_metrics.append(
+                    (label, value, numeric_value)
+                )
+
+            max_chart_value = max(
+                (item[2] for item in normalized_metrics),
+                default=1,
+            )
+            max_chart_value = max(max_chart_value, 1)
+
+            # Create proportional bars using actual profile values.
+            chart_rows = ""
+
+            for label, display_value, numeric_value in normalized_metrics:
+                bar_width = min(
+                    100,
+                    (numeric_value / max_chart_value) * 100,
+                )
+
+                bar_color = (
+                    "#15803d"
+                    if label == "Valid Emails"
+                    else "#2563eb"
+                )
+
+                if label == "Amount Anomalies" and numeric_value > 0:
+                    bar_color = "#b45309"
+
+                chart_rows += f"""
+                    <div style="margin: 16px 0;">
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            gap: 12px;
+                            margin-bottom: 6px;
+                            font-size: 14px;
+                        ">
+                            <span>{html.escape(label)}</span>
+                            <strong>
+                                {html.escape(str(display_value))}
+                            </strong>
+                        </div>
+
+                        <div style="
+                            width: 100%;
+                            height: 18px;
+                            background: #e2e8f0;
+                            border-radius: 5px;
+                            overflow: hidden;
+                        ">
+                            <div style="
+                                width: {bar_width:.2f}%;
+                                height: 18px;
+                                background: {bar_color};
+                                border-radius: 5px;
+                            "></div>
+                        </div>
+                    </div>
+                """
 
             # Build the dashboard.
             dashboard = f"""
@@ -152,6 +253,25 @@ def main():
                     </div>
                 </div>
 
+                <div style="
+                    margin: 24px 0;
+                    padding: 20px;
+                    background: white;
+                    border: 1px solid #dbe3ec;
+                    border-radius: 10px;
+                ">
+                    <h2 style="margin-top: 0;">
+                        Data Quality Metrics Chart
+                    </h2>
+
+                    <p style="color: #64748b; font-size: 14px;">
+                        Comparison of record counts, valid emails,
+                        missing values, and detected anomalies.
+                    </p>
+
+                    {chart_rows}
+                </div>
+
                 <h2>Data Quality Metrics</h2>
 
                 <table style="
@@ -161,10 +281,18 @@ def main():
                 ">
                     <thead>
                         <tr style="background: #e2e8f0;">
-                            <th style="border: 1px solid #cbd5e1; padding: 10px; text-align: left;">
+                            <th style="
+                                border: 1px solid #cbd5e1;
+                                padding: 10px;
+                                text-align: left;
+                            ">
                                 Metric
                             </th>
-                            <th style="border: 1px solid #cbd5e1; padding: 10px; text-align: left;">
+                            <th style="
+                                border: 1px solid #cbd5e1;
+                                padding: 10px;
+                                text-align: left;
+                            ">
                                 Value
                             </th>
                         </tr>
@@ -192,7 +320,9 @@ def main():
             """
 
             # Insert the dashboard before the closing body tag.
-            html_content = report_path.read_text(encoding="utf-8")
+            html_content = report_path.read_text(
+                encoding="utf-8"
+            )
 
             if "</body>" in html_content:
                 html_content = html_content.replace(
@@ -200,12 +330,15 @@ def main():
                     dashboard + "\n</body>",
                     1,
                 )
+
                 report_path.write_text(
                     html_content,
                     encoding="utf-8",
                 )
+
                 logger.info(
-                    "Data quality dashboard added to HTML report"
+                    "Data quality dashboard and metrics chart "
+                    "added to HTML report"
                 )
             else:
                 logger.warning(
@@ -234,4 +367,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
